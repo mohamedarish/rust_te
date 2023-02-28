@@ -5,6 +5,8 @@
     clippy::unwrap_used
 )]
 
+use rust_te::editor::Editor;
+
 fn main() {
-    println!("Hello, world!");
+    Editor::default().run();
 }
