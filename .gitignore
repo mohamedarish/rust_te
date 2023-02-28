@@ -1,0 +1,7 @@
+/target
+
+*.lock
+
+bacon*
+
+.DS_Store
