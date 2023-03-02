@@ -1,4 +1,6 @@
+pub mod document;
 pub mod editor;
+pub mod rows;
 pub mod terminal;
 
 use std::io::{stdin, Error};
