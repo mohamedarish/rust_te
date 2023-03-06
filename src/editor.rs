@@ -106,17 +106,76 @@ impl Editor {
                 x = 0;
             }
             Key::End => {
-                x = terminal_width;
+                if terminal_width
+                    < self.document.content[self.cursor_position.y as usize]
+                        .number_of_characters()
+                        .try_into()
+                        .expect("Cannot convert into u16")
+                {
+                    x = terminal_width;
+                } else {
+                    x = self.document.content[self.cursor_position.y as usize]
+                        .number_of_characters()
+                        .try_into()
+                        .expect("Cannot convert into u16");
+                }
             }
             Key::PageUp => {
                 y = 0;
             }
             Key::PageDown => {
-                y = terminal_height;
+                if terminal_height
+                    < self
+                        .document
+                        .length()
+                        .try_into()
+                        .expect("Cannot convert into u16")
+                {
+                    y = terminal_height;
+                } else {
+                    y = self
+                        .document
+                        .length()
+                        .try_into()
+                        .expect("Cannot convert into u16");
+                }
             }
             _ => todo!(),
         }
 
         self.cursor_position = Position { x, y };
+    }
+
+    fn max_y(&self) -> u16 {
+        if self.terminal.size().height
+            < self
+                .document
+                .length()
+                .try_into()
+                .expect("Cannot convert into u16")
+        {
+            self.terminal.size().height
+        } else {
+            self.document
+                .length()
+                .try_into()
+                .expect("Cannot convert into u16")
+        }
+    }
+
+    fn max_x(&self) -> u16 {
+        if self.terminal.size().width
+            < self.document.content[self.cursor_position.y as usize]
+                .number_of_characters()
+                .try_into()
+                .expect("Cannot convert into u16")
+        {
+            self.terminal.size().width
+        } else {
+            self.document.content[self.cursor_position.y as usize]
+                .number_of_characters()
+                .try_into()
+                .expect("Cannot convert into u16")
+        }
     }
 }

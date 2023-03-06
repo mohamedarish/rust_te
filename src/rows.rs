@@ -24,6 +24,10 @@ impl Rows {
         self.length
     }
 
+    pub fn number_of_characters(&self) -> usize {
+        self.content.len()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.length == 0
     }
