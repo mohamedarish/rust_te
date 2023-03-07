@@ -35,8 +35,12 @@ impl Default for Terminal {
 }
 
 impl Terminal {
-    pub fn size(&self) -> Size {
-        self.size
+    pub fn width(&self) -> u16 {
+        self.size.width
+    }
+
+    pub fn height(&self) -> u16 {
+        self.size.height
     }
 }
 

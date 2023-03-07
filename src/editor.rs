@@ -84,21 +84,18 @@ impl Editor {
     }
 
     fn process_movement(&mut self, key: Key) {
-        let terminal_height = self.terminal.size().height;
-        let terminal_width = self.terminal.size().width;
-
         let Position { mut x, mut y } = self.cursor_position;
 
         match key {
             Key::Left => x = x.saturating_sub(1),
             Key::Right => {
-                if x < terminal_width {
+                if x < self.max_x() {
                     x = x.saturating_add(1);
                 }
             }
             Key::Up => y = y.saturating_sub(1),
             Key::Down => {
-                if y < terminal_height {
+                if y < self.max_y() {
                     y = y.saturating_add(1);
                 }
             }
@@ -106,76 +103,55 @@ impl Editor {
                 x = 0;
             }
             Key::End => {
-                if terminal_width
-                    < self.document.content[self.cursor_position.y as usize]
-                        .number_of_characters()
-                        .try_into()
-                        .expect("Cannot convert into u16")
-                {
-                    x = terminal_width;
-                } else {
-                    x = self.document.content[self.cursor_position.y as usize]
-                        .number_of_characters()
-                        .try_into()
-                        .expect("Cannot convert into u16");
-                }
+                x = self.max_x();
             }
             Key::PageUp => {
                 y = 0;
             }
             Key::PageDown => {
-                if terminal_height
-                    < self
-                        .document
-                        .length()
-                        .try_into()
-                        .expect("Cannot convert into u16")
-                {
-                    y = terminal_height;
-                } else {
-                    y = self
-                        .document
-                        .length()
-                        .try_into()
-                        .expect("Cannot convert into u16");
-                }
+                y = self.max_y();
             }
             _ => todo!(),
         }
 
+        self.handle_cursor_position_overflow();
+
         self.cursor_position = Position { x, y };
     }
 
+    fn handle_cursor_position_overflow(&mut self) {
+        if self.cursor_position.x >= self.max_x() {
+            self.cursor_position.x = self.max_x();
+        }
+    }
+
     fn max_y(&self) -> u16 {
-        if self.terminal.size().height
-            < self
-                .document
-                .length()
-                .try_into()
-                .expect("Cannot convert into u16")
-        {
-            self.terminal.size().height
+        if self.terminal.height() < self.number_of_rows() {
+            self.terminal.height()
         } else {
-            self.document
-                .length()
-                .try_into()
-                .expect("Cannot convert into u16")
+            self.number_of_rows()
         }
     }
 
     fn max_x(&self) -> u16 {
-        if self.terminal.size().width
-            < self.document.content[self.cursor_position.y as usize]
-                .number_of_characters()
-                .try_into()
-                .expect("Cannot convert into u16")
-        {
-            self.terminal.size().width
+        if self.terminal.width() < self.number_of_characters_in_row() {
+            self.terminal.width()
         } else {
-            self.document.content[self.cursor_position.y as usize]
-                .number_of_characters()
-                .try_into()
-                .expect("Cannot convert into u16")
+            self.number_of_characters_in_row()
         }
+    }
+
+    fn number_of_characters_in_row(&self) -> u16 {
+        self.document.content[self.cursor_position.y as usize]
+            .number_of_characters()
+            .try_into()
+            .expect("Cannot convert into u16")
+    }
+
+    fn number_of_rows(&self) -> u16 {
+        self.document
+            .length()
+            .try_into()
+            .expect("Cannot convert into u16")
     }
 }
