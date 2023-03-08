@@ -29,6 +29,8 @@ impl Editor {
 
         set_cursor_position(self.cursor_position);
 
+        // println!("{} {}", self.terminal.height(), self.terminal.width());
+
         for line in self.document.content.iter() {
             println!("{}\r", line.content());
             flush();
@@ -95,7 +97,7 @@ impl Editor {
             }
             Key::Up => y = y.saturating_sub(1),
             Key::Down => {
-                if y < self.max_y() {
+                if y < self.max_y() - 1 {
                     y = y.saturating_add(1);
                 }
             }
@@ -114,9 +116,9 @@ impl Editor {
             _ => todo!(),
         }
 
-        self.handle_cursor_position_overflow();
-
         self.cursor_position = Position { x, y };
+
+        self.handle_cursor_position_overflow();
     }
 
     fn handle_cursor_position_overflow(&mut self) {

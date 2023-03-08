@@ -24,8 +24,8 @@ impl Default for Terminal {
 
         Self {
             size: Size {
-                height: size.0,
-                width: size.1,
+                height: size.1,
+                width: size.0,
             },
             _stdout: stdout()
                 .into_raw_mode()
