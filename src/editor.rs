@@ -58,7 +58,7 @@ impl Editor {
                 self.quit_issued = true;
             }
             Key::Char('\n') => {
-                self.process_movement(Key::Down);
+                self.cursor_position.y += 1;
                 self.process_movement(Key::Home);
             }
             Key::Char(c) => {
@@ -97,7 +97,7 @@ impl Editor {
             }
             Key::Up => y = y.saturating_sub(1),
             Key::Down => {
-                if y < self.max_y() - 1 {
+                if self.max_y() != 0 && y < self.max_y() {
                     y = y.saturating_add(1);
                 }
             }
@@ -144,6 +144,10 @@ impl Editor {
     }
 
     fn number_of_characters_in_row(&self) -> u16 {
+        if self.document.length() < 1 {
+            return 0;
+        }
+
         self.document.content[self.cursor_position.y as usize]
             .number_of_characters()
             .try_into()

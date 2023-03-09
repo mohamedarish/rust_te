@@ -12,5 +12,11 @@ use rust_te::editor::Editor;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    Editor::default().run(args[1].to_string());
+    let arg = if args.len() > 1 {
+        args[1].to_string()
+    } else {
+        String::new()
+    };
+
+    Editor::default().run(arg);
 }

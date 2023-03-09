@@ -10,8 +10,11 @@ pub struct Document {
 
 impl Document {
     pub fn open(filename: &String) -> Self {
-        let content =
-            fs::read_to_string(filename).expect("Does not have permission to access the file");
+        let content = if !filename.is_empty() {
+            fs::read_to_string(filename).expect("Does not have permission to access the file")
+        } else {
+            String::new()
+        };
 
         let mut rows = vec![];
 
