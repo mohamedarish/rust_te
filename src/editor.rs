@@ -65,8 +65,7 @@ impl Editor {
             }
             Key::Char(c) => {
                 self.document.content[self.cursor_position.y as usize]
-                    .content()
-                    .insert(self.cursor_position.x as usize - 1, c);
+                    .add_character(self.cursor_position.x as usize, c);
 
                 let old_x = self.cursor_position.x + 1;
 
@@ -74,21 +73,28 @@ impl Editor {
 
                 set_cursor_position(self.cursor_position);
 
+                flush();
+
                 print!(
                     "{}",
                     self.document.content[self.cursor_position.y as usize].content()
                 );
 
+                flush();
+
                 self.cursor_position.x = old_x;
             }
             Key::Backspace => {
-                if self.cursor_position.x == 0 {
+                if self.cursor_position.x == 0
+                    || self.cursor_position.x as usize
+                        == self.document.content[self.cursor_position.y as usize]
+                            .number_of_characters()
+                {
                     return;
                 }
 
                 self.document.content[self.cursor_position.y as usize]
-                    .content()
-                    .remove(self.cursor_position.x as usize - 1);
+                    .remove_character(self.cursor_position.x as usize);
 
                 let old_x = self.cursor_position.x - 1;
 

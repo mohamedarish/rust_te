@@ -31,4 +31,12 @@ impl Rows {
     pub fn is_empty(&self) -> bool {
         self.length == 0
     }
+
+    pub fn add_character(&mut self, position: usize, character: char) {
+        self.content.insert(position, character);
+    }
+
+    pub fn remove_character(&mut self, position: usize) {
+        self.content.remove(position);
+    }
 }
