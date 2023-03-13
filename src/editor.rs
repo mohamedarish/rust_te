@@ -4,6 +4,7 @@ use crate::{
     clear_screen,
     document::Document,
     read_key,
+    rows::Rows,
     terminal::{flush, set_cursor_position, Terminal},
 };
 
@@ -59,19 +60,49 @@ impl Editor {
             }
             Key::Char('\n') => {
                 self.cursor_position.y += 1;
+                self.document.content.push(Rows::from(""));
                 self.process_movement(Key::Home);
             }
             Key::Char(c) => {
-                print!("{c}");
+                self.document.content[self.cursor_position.y as usize]
+                    .content()
+                    .insert(self.cursor_position.x as usize - 1, c);
 
-                self.cursor_position.x += 1;
-            }
-            Key::Backspace => {
-                self.process_movement(Key::Left);
+                let old_x = self.cursor_position.x + 1;
+
+                self.cursor_position.x = 0;
 
                 set_cursor_position(self.cursor_position);
 
-                print!(" ");
+                print!(
+                    "{}",
+                    self.document.content[self.cursor_position.y as usize].content()
+                );
+
+                self.cursor_position.x = old_x;
+            }
+            Key::Backspace => {
+                if self.cursor_position.x == 0 {
+                    return;
+                }
+
+                self.document.content[self.cursor_position.y as usize]
+                    .content()
+                    .remove(self.cursor_position.x as usize - 1);
+
+                let old_x = self.cursor_position.x - 1;
+
+                self.cursor_position.x = 0;
+
+                set_cursor_position(self.cursor_position);
+
+                print!(
+                    "{}{}",
+                    termion::clear::CurrentLine,
+                    self.document.content[self.cursor_position.y as usize].content()
+                );
+
+                self.cursor_position.x = old_x;
             }
             Key::Up
             | Key::Down
@@ -88,16 +119,24 @@ impl Editor {
     fn process_movement(&mut self, key: Key) {
         let Position { mut x, mut y } = self.cursor_position;
 
+        let width = self.terminal.width();
+        let line_width = self.document.content[y as usize].number_of_characters() as u16;
+        let height = self.document.length() as u16;
+
         match key {
             Key::Left => x = x.saturating_sub(1),
             Key::Right => {
-                if x < self.max_x() {
+                if x < line_width {
                     x = x.saturating_add(1);
+                }
+
+                if x >= width {
+                    todo!("move line a character to the right");
                 }
             }
             Key::Up => y = y.saturating_sub(1),
             Key::Down => {
-                if self.max_y() != 0 && y < self.max_y() {
+                if height > 0 && y < height - 1 {
                     y = y.saturating_add(1);
                 }
             }
@@ -105,59 +144,28 @@ impl Editor {
                 x = 0;
             }
             Key::End => {
-                x = self.max_x();
+                x = line_width;
             }
             Key::PageUp => {
                 y = 0;
             }
             Key::PageDown => {
-                y = self.max_y();
+                y = height;
             }
             _ => todo!(),
         }
 
         self.cursor_position = Position { x, y };
 
-        self.handle_cursor_position_overflow();
+        self.handle_x_overflow(y);
     }
 
-    fn handle_cursor_position_overflow(&mut self) {
-        if self.cursor_position.x >= self.max_x() {
-            self.cursor_position.x = self.max_x();
+    fn handle_x_overflow(&mut self, new_line_index: u16) {
+        let max_width =
+            self.document.content[new_line_index as usize].number_of_characters() as u16;
+
+        if self.cursor_position.x > max_width {
+            self.cursor_position.x = max_width;
         }
-    }
-
-    fn max_y(&self) -> u16 {
-        if self.terminal.height() < self.number_of_rows() {
-            self.terminal.height()
-        } else {
-            self.number_of_rows()
-        }
-    }
-
-    fn max_x(&self) -> u16 {
-        if self.terminal.width() < self.number_of_characters_in_row() {
-            self.terminal.width()
-        } else {
-            self.number_of_characters_in_row()
-        }
-    }
-
-    fn number_of_characters_in_row(&self) -> u16 {
-        if self.document.length() < 1 {
-            return 0;
-        }
-
-        self.document.content[self.cursor_position.y as usize]
-            .number_of_characters()
-            .try_into()
-            .expect("Cannot convert into u16")
-    }
-
-    fn number_of_rows(&self) -> u16 {
-        self.document
-            .length()
-            .try_into()
-            .expect("Cannot convert into u16")
     }
 }
