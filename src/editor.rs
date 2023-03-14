@@ -64,51 +64,10 @@ impl Editor {
                 self.process_movement(Key::Home);
             }
             Key::Char(c) => {
-                self.document.content[self.cursor_position.y as usize]
-                    .add_character(self.cursor_position.x as usize, c);
-
-                let old_x = self.cursor_position.x + 1;
-
-                self.cursor_position.x = 0;
-
-                set_cursor_position(self.cursor_position);
-
-                flush();
-
-                print!(
-                    "{}",
-                    self.document.content[self.cursor_position.y as usize].content()
-                );
-
-                flush();
-
-                self.cursor_position.x = old_x;
+                self.handle_character_entered(c);
             }
             Key::Backspace => {
-                if self.cursor_position.x == 0
-                    || self.cursor_position.x as usize
-                        == self.document.content[self.cursor_position.y as usize]
-                            .number_of_characters()
-                {
-                    return;
-                }
-
-                self.document.content[self.cursor_position.y as usize]
-                    .remove_character(self.cursor_position.x as usize);
-
-                let old_x = self.cursor_position.x - 1;
-
-                self.cursor_position.x = 0;
-
-                set_cursor_position(self.cursor_position);
-
-                print!(
-                    "{}{}",
-                    termion::clear::CurrentLine,
-                    self.document.content[self.cursor_position.y as usize].content()
-                );
-
-                self.cursor_position.x = old_x;
+                self.handle_backspace();
             }
             Key::Up
             | Key::Down
@@ -173,5 +132,50 @@ impl Editor {
         if self.cursor_position.x > max_width {
             self.cursor_position.x = max_width;
         }
+    }
+
+    fn handle_character_entered(&mut self, c: char) {
+        self.document.content[self.cursor_position.y as usize]
+            .add_character(self.cursor_position.x as usize, c);
+
+        let old_x = self.cursor_position.x + 1;
+
+        self.cursor_position.x = 0;
+
+        set_cursor_position(self.cursor_position);
+
+        flush();
+
+        print!(
+            "{}",
+            self.document.content[self.cursor_position.y as usize].content()
+        );
+
+        flush();
+
+        self.cursor_position.x = old_x;
+    }
+
+    fn handle_backspace(&mut self) {
+        if self.cursor_position.x == 0 {
+            return;
+        }
+
+        self.document.content[self.cursor_position.y as usize]
+            .remove_character(self.cursor_position.x as usize - 1);
+
+        let old_x = self.cursor_position.x - 1;
+
+        self.cursor_position.x = 0;
+
+        set_cursor_position(self.cursor_position);
+
+        print!(
+            "{}{}",
+            termion::clear::CurrentLine,
+            self.document.content[self.cursor_position.y as usize].content()
+        );
+
+        self.cursor_position.x = old_x;
     }
 }
