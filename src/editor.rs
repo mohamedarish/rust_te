@@ -1,7 +1,9 @@
+use std::io::Error;
+
 use termion::event::Key;
 
 use crate::{
-    clear_screen,
+    clear_screen, die,
     document::Document,
     read_key,
     rows::Rows,
@@ -47,12 +49,19 @@ impl Editor {
                 break;
             }
 
-            self.process_keypress();
+            if let Err(error) = self.process_keypress() {
+                die(error);
+            };
         }
     }
 
-    fn process_keypress(&mut self) {
-        let pressed_key = read_key();
+    fn process_keypress(&mut self) -> Result<(), Error> {
+        let pressed_key = match read_key() {
+            Ok(key) => key,
+            Err(e) => {
+                return Err(e);
+            }
+        };
 
         match pressed_key {
             Key::Ctrl('g') => {
@@ -64,7 +73,18 @@ impl Editor {
                 self.process_movement(Key::Home);
             }
             Key::Char(c) => {
-                self.handle_character_entered(c);
+                if self.document.length() < 1 {
+                    self.document.content.push(Rows::from(""));
+                }
+                if self.document.content[self.cursor_position.y as usize].is_empty()
+                    || self.cursor_position.x as usize
+                        == self.document.content[self.cursor_position.y as usize]
+                            .number_of_characters()
+                {
+                    self.document.content[self.cursor_position.y as usize].append(c);
+                } else {
+                    self.handle_character_entered(c);
+                }
             }
             Key::Backspace => {
                 self.handle_backspace();
@@ -79,6 +99,8 @@ impl Editor {
             | Key::End => self.process_movement(pressed_key),
             _ => {}
         }
+
+        Ok(())
     }
 
     fn process_movement(&mut self, key: Key) {

@@ -39,4 +39,8 @@ impl Rows {
     pub fn remove_character(&mut self, position: usize) {
         self.content.remove(position);
     }
+
+    pub fn append(&mut self, character: char) {
+        self.content.push(character);
+    }
 }

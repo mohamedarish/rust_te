@@ -16,10 +16,10 @@ pub fn clear_screen() {
     println!("{}", clear::All);
 }
 
-pub fn read_key() -> Key {
+pub fn read_key() -> Result<Key, Error> {
     loop {
         if let Some(key) = stdin().lock().keys().next() {
-            return key.expect("Cannot parse key");
+            return key;
         }
     }
 }
