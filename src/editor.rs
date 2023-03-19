@@ -73,18 +73,7 @@ impl Editor {
                 self.process_movement(Key::Home);
             }
             Key::Char(c) => {
-                if self.document.length() < 1 {
-                    self.document.content.push(Rows::from(""));
-                }
-                if self.document.content[self.cursor_position.y as usize].is_empty()
-                    || self.cursor_position.x as usize
-                        == self.document.content[self.cursor_position.y as usize]
-                            .number_of_characters()
-                {
-                    self.document.content[self.cursor_position.y as usize].append(c);
-                } else {
-                    self.handle_character_entered(c);
-                }
+                self.handle_character_entered(c);
             }
             Key::Backspace => {
                 self.handle_backspace();
@@ -157,8 +146,18 @@ impl Editor {
     }
 
     fn handle_character_entered(&mut self, c: char) {
-        self.document.content[self.cursor_position.y as usize]
-            .add_character(self.cursor_position.x as usize, c);
+        if self.document.length() < 1 {
+            self.document.content.push(Rows::from(""));
+        }
+        if self.document.content[self.cursor_position.y as usize].is_empty()
+            || self.cursor_position.x as usize
+                == self.document.content[self.cursor_position.y as usize].number_of_characters()
+        {
+            self.document.content[self.cursor_position.y as usize].append(c);
+        } else {
+            self.document.content[self.cursor_position.y as usize]
+                .add_character(self.cursor_position.x as usize, c);
+        }
 
         let old_x = self.cursor_position.x + 1;
 
