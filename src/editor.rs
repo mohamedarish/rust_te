@@ -36,6 +36,7 @@ impl Editor {
 
         for line in self.document.content.iter() {
             println!("{}\r", line.content());
+
             flush();
         }
 
@@ -67,13 +68,26 @@ impl Editor {
             Key::Ctrl('g') => {
                 self.quit_issued = true;
             }
-            Key::Char('\n') => {
-                self.cursor_position.y += 1;
-                self.document.content.push(Rows::from(""));
-                self.process_movement(Key::Home);
-            }
+            // Key::Char('\n') => {
+            //     self.cursor_position.y += 1;
+            //     self.document.content.push(Rows::from(""));
+            //     self.process_movement(Key::Home);
+            // }
             Key::Char(c) => {
                 self.handle_character_entered(c);
+                if c == '\n' {
+                    // println!(
+                    //     "{} {}",
+                    //     self.cursor_position.y as usize,
+                    //     self.document.length() - 1
+                    // );
+                    if self.cursor_is_on_last_line() {
+                        self.document.content.push(Rows::from(""));
+                    }
+                    self.process_movement(Key::Down);
+                    self.process_movement(Key::Home);
+                    set_cursor_position(self.cursor_position);
+                }
             }
             Key::Backspace => {
                 self.handle_backspace();
@@ -90,6 +104,18 @@ impl Editor {
         }
 
         Ok(())
+    }
+
+    fn cursor_is_on_last_line(&mut self) -> bool {
+        if self.cursor_position.y as usize == self.document.length() - 1 {
+            return true;
+        }
+
+        if self.document.length() == 0 {
+            return true;
+        }
+
+        false
     }
 
     fn process_movement(&mut self, key: Key) {
