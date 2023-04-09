@@ -24,8 +24,8 @@ impl Default for Terminal {
 
         Self {
             size: Size {
-                height: size.0,
-                width: size.1,
+                height: size.1,
+                width: size.0,
             },
             _stdout: stdout()
                 .into_raw_mode()
@@ -35,8 +35,12 @@ impl Default for Terminal {
 }
 
 impl Terminal {
-    pub fn size(&self) -> Size {
-        self.size
+    pub fn width(&self) -> u16 {
+        self.size.width
+    }
+
+    pub fn height(&self) -> u16 {
+        self.size.height
     }
 }
 
