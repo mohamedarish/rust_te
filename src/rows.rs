@@ -1,46 +1,110 @@
+use std::cmp;
 use unicode_segmentation::UnicodeSegmentation;
 
-#[derive(Debug, Clone)]
-pub struct Rows {
-    content: String,
-    length: usize,
+#[derive(Default)]
+pub struct Row {
+    string: String,
+    pub is_highlighted: bool,
+    len: usize,
 }
 
-impl From<&str> for Rows {
+impl From<&str> for Row {
     fn from(slice: &str) -> Self {
         Self {
-            content: String::from(slice),
-            length: slice.graphemes(true).count(),
+            string: String::from(slice),
+            is_highlighted: false,
+            len: slice.graphemes(true).count(),
         }
     }
 }
 
-impl Rows {
-    pub fn content(&self) -> String {
-        self.content.to_string()
+impl Row {
+    pub fn render(&self, start: usize, end: usize) -> String {
+        let end = cmp::min(end, self.string.len());
+        let start = cmp::min(start, end);
+        let mut result = String::new();
+        for (_index, grapheme) in self.string[..]
+            .graphemes(true)
+            .enumerate()
+            .skip(start)
+            .take(end - start)
+        {
+            if let Some(c) = grapheme.chars().next() {
+                if c == '\t' {
+                    result.push_str(" ");
+                } else {
+                    result.push(c);
+                }
+            }
+        }
+        result
     }
-
-    pub fn number_of_words(&self) -> usize {
-        self.length
+    pub fn len(&self) -> usize {
+        self.len
     }
-
-    pub fn number_of_characters(&self) -> usize {
-        self.content.len()
-    }
-
     pub fn is_empty(&self) -> bool {
-        self.length == 0
+        self.len == 0
     }
-
-    pub fn add_character(&mut self, position: usize, character: char) {
-        self.content.insert(position, character);
+    pub fn insert(&mut self, at: usize, c: char) {
+        if at >= self.len() {
+            self.string.push(c);
+            self.len += 1;
+            return;
+        }
+        let mut result: String = String::new();
+        let mut length = 0;
+        for (index, grapheme) in self.string[..].graphemes(true).enumerate() {
+            length += 1;
+            if index == at {
+                length += 1;
+                result.push(c);
+            }
+            result.push_str(grapheme);
+        }
+        self.len = length;
+        self.string = result;
     }
-
-    pub fn remove_character(&mut self, position: usize) {
-        self.content.remove(position);
+    pub fn delete(&mut self, at: usize) {
+        if at >= self.len() {
+            return;
+        }
+        let mut result: String = String::new();
+        let mut length = 0;
+        for (index, grapheme) in self.string[..].graphemes(true).enumerate() {
+            if index != at {
+                length += 1;
+                result.push_str(grapheme);
+            }
+        }
+        self.len = length;
+        self.string = result;
     }
+    pub fn append(&mut self, new: &Self) {
+        self.string = format!("{}{}", self.string, new.string);
+        self.len += new.len;
+    }
+    pub fn split(&mut self, at: usize) -> Self {
+        let mut row: String = String::new();
+        let mut length = 0;
+        let mut splitted_row: String = String::new();
+        let mut splitted_length = 0;
+        for (index, grapheme) in self.string[..].graphemes(true).enumerate() {
+            if index < at {
+                length += 1;
+                row.push_str(grapheme);
+            } else {
+                splitted_length += 1;
+                splitted_row.push_str(grapheme);
+            }
+        }
 
-    pub fn append(&mut self, character: char) {
-        self.content.push(character);
+        self.string = row;
+        self.len = length;
+        self.is_highlighted = false;
+        Self {
+            string: splitted_row,
+            len: splitted_length,
+            is_highlighted: false,
+        }
     }
 }

@@ -1,96 +1,92 @@
-use std::io::Error;
-
+use crate::document::Document;
+use crate::rows::Row;
+use crate::terminal::Terminal;
+use std::env;
 use termion::event::Key;
 
-use crate::{
-    clear_screen, die,
-    document::Document,
-    read_key,
-    rows::Rows,
-    terminal::{flush, set_cursor_position, Terminal},
-};
-
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone)]
 pub struct Position {
-    pub x: u16,
-    pub y: u16,
+    pub x: usize,
+    pub y: usize,
 }
 
-#[derive(Default)]
 pub struct Editor {
-    quit_issued: bool,
+    should_quit: bool,
     terminal: Terminal,
     cursor_position: Position,
+    offset: Position,
     document: Document,
 }
 
 impl Editor {
-    pub fn run(&mut self, filename: String) {
-        clear_screen();
+    pub fn default() -> Self {
+        let args: Vec<String> = env::args().collect();
 
-        self.document = Document::open(&filename);
-
-        set_cursor_position(self.cursor_position);
-
-        // println!("{} {}", self.terminal.height(), self.terminal.width());
-
-        for line in self.document.content.iter() {
-            println!("{}\r", line.content());
-
-            flush();
-        }
-
-        loop {
-            set_cursor_position(self.cursor_position);
-
-            flush();
-
-            if self.quit_issued {
-                clear_screen();
-                break;
+        let document = if let Some(file_name) = args.get(1) {
+            let doc = Document::open(file_name);
+            if let Ok(doc) = doc {
+                doc
+            } else {
+                Document::default()
             }
+        } else {
+            Document::default()
+        };
 
-            if let Err(error) = self.process_keypress() {
-                die(error);
-            };
+        Self {
+            should_quit: false,
+            terminal: Terminal::default(),
+            document,
+            cursor_position: Position::default(),
+            offset: Position::default(),
         }
     }
 
-    fn process_keypress(&mut self) -> Result<(), Error> {
-        let pressed_key = match read_key() {
-            Ok(key) => key,
-            Err(e) => {
-                return Err(e);
+    pub fn run(&mut self) {
+        loop {
+            if let Err(error) = self.refresh_screen() {
+                die(error);
             }
-        };
+            if self.should_quit {
+                break;
+            }
+            if let Err(error) = self.process_keypress() {
+                die(error);
+            }
+        }
+    }
 
+    fn refresh_screen(&mut self) -> Result<(), std::io::Error> {
+        Terminal::cursor_hide();
+        Terminal::cursor_position(&Position::default());
+        if self.should_quit {
+            Terminal::clear_screen();
+            println!("Goodbye.\r");
+        } else {
+            self.draw_rows();
+            Terminal::cursor_position(&Position {
+                x: self.cursor_position.x.saturating_sub(self.offset.x),
+                y: self.cursor_position.y.saturating_sub(self.offset.y),
+            });
+        }
+        Terminal::cursor_show();
+        Terminal::flush()
+    }
+
+    fn process_keypress(&mut self) -> Result<(), std::io::Error> {
+        let pressed_key = Terminal::read_key()?;
         match pressed_key {
-            Key::Ctrl('g') => {
-                self.quit_issued = true;
-            }
-            // Key::Char('\n') => {
-            //     self.cursor_position.y += 1;
-            //     self.document.content.push(Rows::from(""));
-            //     self.process_movement(Key::Home);
-            // }
+            Key::Ctrl('q') => self.should_quit = true,
             Key::Char(c) => {
-                self.handle_character_entered(c);
-                if c == '\n' {
-                    // println!(
-                    //     "{} {}",
-                    //     self.cursor_position.y as usize,
-                    //     self.document.length() - 1
-                    // );
-                    if self.cursor_is_on_last_line() {
-                        self.document.content.push(Rows::from(""));
-                    }
-                    self.process_movement(Key::Down);
-                    self.process_movement(Key::Home);
-                    set_cursor_position(self.cursor_position);
-                }
+                self.document.insert(&self.cursor_position, c);
+                self.move_cursor(Key::Right);
             }
+            Key::Delete => self.document.delete(&self.cursor_position),
             Key::Backspace => {
-                self.handle_backspace();
+                if self.cursor_position.x > 0 || self.cursor_position.y > 0 {
+                    self.move_cursor(Key::Left);
+                    self.document.delete(&self.cursor_position);
+                }
             }
             Key::Up
             | Key::Down
@@ -98,131 +94,121 @@ impl Editor {
             | Key::Right
             | Key::PageUp
             | Key::PageDown
-            | Key::Home
-            | Key::End => self.process_movement(pressed_key),
-            _ => {}
+            | Key::End
+            | Key::Home => self.move_cursor(pressed_key),
+            _ => (),
         }
-
+        self.scroll();
         Ok(())
     }
-
-    fn cursor_is_on_last_line(&mut self) -> bool {
-        if self.cursor_position.y as usize == self.document.length() - 1 {
-            return true;
+    fn scroll(&mut self) {
+        let Position { x, y } = self.cursor_position;
+        let width = self.terminal.size().width as usize;
+        let height = self.terminal.size().height as usize;
+        let mut offset = &mut self.offset;
+        if y < offset.y {
+            offset.y = y;
+        } else if y >= offset.y.saturating_add(height) {
+            offset.y = y.saturating_sub(height).saturating_add(1);
         }
-
-        if self.document.length() == 0 {
-            return true;
+        if x < offset.x {
+            offset.x = x;
+        } else if x >= offset.x.saturating_add(width) {
+            offset.x = x.saturating_sub(width).saturating_add(1);
         }
-
-        false
     }
-
-    fn process_movement(&mut self, key: Key) {
-        let Position { mut x, mut y } = self.cursor_position;
-
-        let width = self.terminal.width();
-        let line_width = self.document.content[y as usize].number_of_characters() as u16;
-        let height = self.document.length() as u16;
-
+    fn move_cursor(&mut self, key: Key) {
+        let terminal_height = self.terminal.size().height as usize;
+        let Position { mut y, mut x } = self.cursor_position;
+        let height = self.document.len();
+        let mut width = if let Some(row) = self.document.row(y) {
+            row.len()
+        } else {
+            0
+        };
         match key {
-            Key::Left => x = x.saturating_sub(1),
-            Key::Right => {
-                if x < line_width {
-                    x = x.saturating_add(1);
-                }
-
-                if x >= width {
-                    todo!("move line a character to the right");
-                }
-            }
             Key::Up => y = y.saturating_sub(1),
             Key::Down => {
-                if height > 0 && y < height - 1 {
+                if y < height {
                     y = y.saturating_add(1);
                 }
             }
-            Key::Home => {
-                x = 0;
+            Key::Left => {
+                if x > 0 {
+                    x -= 1;
+                } else if y > 0 {
+                    y -= 1;
+                    if let Some(row) = self.document.row(y) {
+                        x = row.len();
+                    } else {
+                        x = 0;
+                    }
+                }
             }
-            Key::End => {
-                x = line_width;
+            Key::Right => {
+                if x < width {
+                    x += 1;
+                } else if y < height {
+                    y += 1;
+                    x = 0;
+                }
             }
             Key::PageUp => {
-                y = 0;
+                y = if y > terminal_height {
+                    y.saturating_sub(terminal_height)
+                } else {
+                    0
+                }
             }
             Key::PageDown => {
-                y = height;
+                y = if y.saturating_add(terminal_height) < height {
+                    y.saturating_add(terminal_height)
+                } else {
+                    height
+                }
             }
-            _ => todo!(),
+            Key::Home => x = 0,
+            Key::End => x = width,
+            _ => (),
         }
-
-        self.cursor_position = Position { x, y };
-
-        self.handle_x_overflow(y);
-    }
-
-    fn handle_x_overflow(&mut self, new_line_index: u16) {
-        let max_width =
-            self.document.content[new_line_index as usize].number_of_characters() as u16;
-
-        if self.cursor_position.x > max_width {
-            self.cursor_position.x = max_width;
-        }
-    }
-
-    fn handle_character_entered(&mut self, c: char) {
-        if self.document.length() < 1 {
-            self.document.content.push(Rows::from(""));
-        }
-        if self.document.content[self.cursor_position.y as usize].is_empty()
-            || self.cursor_position.x as usize
-                == self.document.content[self.cursor_position.y as usize].number_of_characters()
-        {
-            self.document.content[self.cursor_position.y as usize].append(c);
+        width = if let Some(row) = self.document.row(y) {
+            row.len()
         } else {
-            self.document.content[self.cursor_position.y as usize]
-                .add_character(self.cursor_position.x as usize, c);
+            0
+        };
+        if x > width {
+            x = width;
         }
 
-        let old_x = self.cursor_position.x + 1;
-
-        self.cursor_position.x = 0;
-
-        set_cursor_position(self.cursor_position);
-
-        flush();
-
-        print!(
-            "{}",
-            self.document.content[self.cursor_position.y as usize].content()
-        );
-
-        flush();
-
-        self.cursor_position.x = old_x;
+        self.cursor_position = Position { x, y }
     }
 
-    fn handle_backspace(&mut self) {
-        if self.cursor_position.x == 0 {
-            return;
+    pub fn draw_row(&self, row: &Row) {
+        let width = self.terminal.size().width as usize;
+        let start = self.offset.x;
+        let end = self.offset.x.saturating_add(width);
+        let row = row.render(start, end);
+        println!("{}\r", row)
+    }
+
+    fn draw_rows(&self) {
+        let height = self.terminal.size().height;
+        for terminal_row in 0..height {
+            Terminal::clear_current_line();
+            if let Some(row) = self
+                .document
+                .row(self.offset.y.saturating_add(terminal_row as usize))
+            {
+                self.draw_row(row);
+            } else if self.document.is_empty() && terminal_row == height / 3 {
+            } else {
+                println!("~\r");
+            }
         }
-
-        self.document.content[self.cursor_position.y as usize]
-            .remove_character(self.cursor_position.x as usize - 1);
-
-        let old_x = self.cursor_position.x - 1;
-
-        self.cursor_position.x = 0;
-
-        set_cursor_position(self.cursor_position);
-
-        print!(
-            "{}{}",
-            termion::clear::CurrentLine,
-            self.document.content[self.cursor_position.y as usize].content()
-        );
-
-        self.cursor_position.x = old_x;
     }
+}
+
+fn die(e: std::io::Error) {
+    Terminal::clear_screen();
+    panic!("{e}");
 }
