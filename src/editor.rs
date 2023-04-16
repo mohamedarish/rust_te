@@ -2,7 +2,10 @@ use crate::document::Document;
 use crate::rows::Row;
 use crate::terminal::Terminal;
 use std::env;
-use termion::event::Key;
+use termion::{
+    color::{self, Reset, Yellow},
+    event::Key,
+};
 
 #[derive(Default, Clone)]
 pub struct Position {
@@ -18,8 +21,8 @@ pub struct Editor {
     document: Document,
 }
 
-impl Editor {
-    pub fn default() -> Self {
+impl Default for Editor {
+    fn default() -> Self {
         let args: Vec<String> = env::args().collect();
 
         let document = if let Some(file_name) = args.get(1) {
@@ -41,7 +44,9 @@ impl Editor {
             offset: Position::default(),
         }
     }
+}
 
+impl Editor {
     pub fn run(&mut self) {
         loop {
             if let Err(error) = self.refresh_screen() {
@@ -101,6 +106,7 @@ impl Editor {
         self.scroll();
         Ok(())
     }
+
     fn scroll(&mut self) {
         let Position { x, y } = self.cursor_position;
         let width = self.terminal.size().width as usize;
@@ -117,6 +123,7 @@ impl Editor {
             offset.x = x.saturating_sub(width).saturating_add(1);
         }
     }
+
     fn move_cursor(&mut self, key: Key) {
         let terminal_height = self.terminal.size().height as usize;
         let Position { mut y, mut x } = self.cursor_position;
@@ -202,7 +209,7 @@ impl Editor {
                 self.draw_row(row);
             } else if self.document.is_empty() && terminal_row == height / 3 {
             } else {
-                println!("~\r");
+                println!("{}~\r{}", color::Fg(Yellow), color::Fg(Reset));
             }
         }
     }

@@ -31,7 +31,7 @@ impl Row {
         {
             if let Some(c) = grapheme.chars().next() {
                 if c == '\t' {
-                    result.push_str(" ");
+                    result.push(' ');
                 } else {
                     result.push(c);
                 }
@@ -39,12 +39,15 @@ impl Row {
         }
         result
     }
+
     pub fn len(&self) -> usize {
         self.len
     }
+
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
+
     pub fn insert(&mut self, at: usize, c: char) {
         if at >= self.len() {
             self.string.push(c);
@@ -64,6 +67,7 @@ impl Row {
         self.len = length;
         self.string = result;
     }
+
     pub fn delete(&mut self, at: usize) {
         if at >= self.len() {
             return;
@@ -79,10 +83,12 @@ impl Row {
         self.len = length;
         self.string = result;
     }
+
     pub fn append(&mut self, new: &Self) {
         self.string = format!("{}{}", self.string, new.string);
         self.len += new.len;
     }
+
     pub fn split(&mut self, at: usize) -> Self {
         let mut row: String = String::new();
         let mut length = 0;
