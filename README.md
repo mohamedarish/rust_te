@@ -10,10 +10,11 @@ Terminal-based Text Editor made in the Rust Programming language
 - File traversal
 - Buffer editing
 - Closing the file
+- Save after making changes to old files
 
 ## Todos
 
-- Save and Delete files
+- Save by creating a new file
 - Find and replace
 - undo and redo
 - Syntax Highlighting
