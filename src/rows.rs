@@ -113,4 +113,8 @@ impl Row {
             is_highlighted: false,
         }
     }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        self.string.as_bytes()
+    }
 }

@@ -78,10 +78,25 @@ impl Editor {
         Terminal::flush()
     }
 
+    fn save(&mut self) {
+        if self.document.file_name.is_none() {
+            let new_name = Some(String::from("NewFile"));
+            if new_name.is_none() {
+                return;
+            }
+            self.document.file_name = new_name;
+        }
+
+        self.document
+            .save()
+            .expect("FileName error or permission error");
+    }
+
     fn process_keypress(&mut self) -> Result<(), std::io::Error> {
         let pressed_key = Terminal::read_key()?;
         match pressed_key {
             Key::Ctrl('q') => self.should_quit = true,
+            Key::Ctrl('s') => self.save(),
             Key::Char(c) => {
                 self.document.insert(&self.cursor_position, c);
                 self.move_cursor(Key::Right);

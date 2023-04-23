@@ -1,6 +1,7 @@
 use crate::editor::Position;
 use crate::rows::Row;
-use std::fs;
+use std::fs::{self, File};
+use std::io::{Error, Write};
 
 #[derive(Default)]
 pub struct Document {
@@ -81,6 +82,18 @@ impl Document {
             let row = &mut self.rows[at.y];
             row.delete(at.x);
         }
+    }
+
+    pub fn save(&mut self) -> Result<(), Error> {
+        if let Some(file_name) = &self.file_name {
+            let mut file = File::create(file_name)?;
+            for row in &mut self.rows {
+                file.write_all(row.as_bytes())?;
+                file.write_all(b"\n")?;
+            }
+            self.dirty = false;
+        }
+        Ok(())
     }
 
     pub fn is_dirty(self) -> bool {
