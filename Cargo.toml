@@ -3,12 +3,12 @@ name = "rust_te"
 version = "0.1.0"
 edition = "2021"
 authors = [
-    "Mohamed Arish <arish1248@gmail.com>",
-    "Nimisha Nakshatra P J<nimisha1942001@gmail.com>",
-    "Midlaj M K <midlaj45mk@gmail.com>",
-    "Minhaj K K <minhaj19mr2001@gmail.com>",
+  "Mohamed Arish <arish1248@gmail.com>",
+  "Nimisha Nakshatra P J<nimisha1942001@gmail.com>",
+  "Midlaj M K <midlaj45mk@gmail.com>",
+  "Minhaj K K <minhaj19mr2001@gmail.com>",
 ]
-description="A moderately functional low level text editor with minimal features built completely in rust"
+description = "A moderately functional low level text editor with minimal features built completely in rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]

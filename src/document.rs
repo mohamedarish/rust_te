@@ -44,10 +44,8 @@ impl Document {
             self.rows.push(Row::default());
             return;
         }
-        #[allow(clippy::indexing_slicing)]
         let current_row = &mut self.rows[at.y];
         let new_row = current_row.split(at.x);
-        #[allow(clippy::integer_arithmetic)]
         self.rows.insert(at.y + 1, new_row);
     }
 
