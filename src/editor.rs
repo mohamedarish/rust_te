@@ -48,21 +48,8 @@ pub struct Editor {
     highlighted_word: Option<String>,
 }
 
-impl Editor {
-    pub fn run(&mut self) {
-        loop {
-            if let Err(error) = self.refresh_screen() {
-                die(error);
-            }
-            if self.should_quit {
-                break;
-            }
-            if let Err(error) = self.process_keypress() {
-                die(error);
-            }
-        }
-    }
-    pub fn default() -> Self {
+impl Default for Editor {
+    fn default() -> Self {
         let args: Vec<String> = env::args().collect();
         let mut initial_status =
             String::from("HELP: Ctrl-F = find | Ctrl-S = save | Ctrl-Q = quit");
@@ -81,13 +68,29 @@ impl Editor {
 
         Self {
             should_quit: false,
-            terminal: Terminal::default().expect("Failed to initialize terminal"),
+            terminal: Terminal::default(),
             document,
             cursor_position: Position::default(),
             offset: Position::default(),
             status_message: StatusMessage::from(initial_status),
             quit_times: QUIT_TIMES,
             highlighted_word: None,
+        }
+    }
+}
+
+impl Editor {
+    pub fn run(&mut self) {
+        loop {
+            if let Err(error) = self.refresh_screen() {
+                die(error);
+            }
+            if self.should_quit {
+                break;
+            }
+            if let Err(error) = self.process_keypress() {
+                die(error);
+            }
         }
     }
 
@@ -153,7 +156,7 @@ impl Editor {
                     if let Some(position) =
                         editor
                             .document
-                            .find(&query, &editor.cursor_position, direction)
+                            .find(query, &editor.cursor_position, direction)
                     {
                         editor.cursor_position = position;
                         editor.scroll();
@@ -300,7 +303,7 @@ impl Editor {
         let mut welcome_message = format!("Hecto editor -- version {}", VERSION);
         let width = self.terminal.size().width as usize;
         let len = welcome_message.len();
-        #[allow(clippy::integer_arithmetic, clippy::integer_division)]
+
         let padding = width.saturating_sub(len) / 2;
         let spaces = " ".repeat(padding.saturating_sub(1));
         welcome_message = format!("~{}{}", spaces, welcome_message);
@@ -314,7 +317,7 @@ impl Editor {
         let row = row.render(start, end);
         println!("{}\r", row)
     }
-    #[allow(clippy::integer_division, clippy::integer_arithmetic)]
+
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
         for terminal_row in 0..height {
@@ -358,7 +361,7 @@ impl Editor {
             self.cursor_position.y.saturating_add(1),
             self.document.len()
         );
-        #[allow(clippy::integer_arithmetic)]
+
         let len = status.len() + line_indicator.len();
         status.push_str(&" ".repeat(width.saturating_sub(len)));
         status = format!("{}{}", status, line_indicator);

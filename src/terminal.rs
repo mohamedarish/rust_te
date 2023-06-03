@@ -1,5 +1,5 @@
 use crate::Position;
-use std::io::{self, stdout, Write};
+use std::io::{self, stdout, Error, Write};
 use termion::color;
 use termion::event::Key;
 use termion::input::TermRead;
@@ -14,25 +14,30 @@ pub struct Terminal {
     _stdout: RawTerminal<std::io::Stdout>,
 }
 
-impl Terminal {
-    pub fn default() -> Result<Self, std::io::Error> {
-        let size = termion::terminal_size()?;
-        Ok(Self {
+impl Default for Terminal {
+    fn default() -> Self {
+        let size = termion::terminal_size().expect("Cannot read the terminal size");
+        Self {
             size: Size {
                 width: size.0,
-                height: size.1.saturating_sub(2),
+                height: size.1,
             },
-            _stdout: stdout().into_raw_mode()?,
-        })
+            _stdout: stdout()
+                .into_raw_mode()
+                .expect("Cannot convert into raw mode"),
+        }
     }
+}
+
+impl Terminal {
     pub fn size(&self) -> &Size {
         &self.size
     }
+
     pub fn clear_screen() {
         print!("{}", termion::clear::All);
     }
 
-    #[allow(clippy::cast_possible_truncation)]
     pub fn cursor_position(position: &Position) {
         let Position { mut x, mut y } = position;
         x = x.saturating_add(1);
@@ -41,9 +46,11 @@ impl Terminal {
         let y = y as u16;
         print!("{}", termion::cursor::Goto(x, y));
     }
-    pub fn flush() -> Result<(), std::io::Error> {
-        io::stdout().flush()
+
+    pub fn flush() -> Result<(), Error> {
+        stdout().flush()
     }
+
     pub fn read_key() -> Result<Key, std::io::Error> {
         loop {
             if let Some(key) = io::stdin().lock().keys().next() {
