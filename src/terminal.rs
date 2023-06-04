@@ -20,7 +20,7 @@ impl Default for Terminal {
         Self {
             size: Size {
                 width: size.0,
-                height: size.1,
+                height: size.1 - 2,
             },
             _stdout: stdout()
                 .into_raw_mode()

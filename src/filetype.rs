@@ -111,6 +111,52 @@ impl FileType {
                     ],
                 },
             };
+        } else if file_name.ends_with(".c") {
+            return Self {
+                name: String::from("C"),
+                hl_opts: HighlightingOptions {
+                    numbers: true,
+                    strings: true,
+                    characters: true,
+                    comments: true,
+                    multiline_comments: true,
+                    primary_keywords: vec![
+                        "auto".to_string(),
+                        "const".to_string(),
+                        "struct".to_string(),
+                        "unsigned".to_string(),
+                        "break".to_string(),
+                        "continue".to_string(),
+                        "else".to_string(),
+                        "for".to_string(),
+                        "signed".to_string(),
+                        "switch".to_string(),
+                        "case".to_string(),
+                        "default".to_string(),
+                        "enum".to_string(),
+                        "goto".to_string(),
+                        "register".to_string(),
+                        "sizeof".to_string(),
+                        "typedef".to_string(),
+                        "volatile".to_string(),
+                        "do".to_string(),
+                        "extern".to_string(),
+                        "if".to_string(),
+                        "return".to_string(),
+                        "static".to_string(),
+                        "union".to_string(),
+                        "while".to_string(),
+                    ],
+                    secondary_keywords: vec![
+                        "double".to_string(),
+                        "float".to_string(),
+                        "int".to_string(),
+                        "short".to_string(),
+                        "long".to_string(),
+                        "char".to_string(),
+                    ],
+                },
+            };
         }
         Self::default()
     }

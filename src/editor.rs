@@ -300,7 +300,7 @@ impl Editor {
         self.cursor_position = Position { x, y }
     }
     fn draw_welcome_message(&self) {
-        let mut welcome_message = format!("Hecto editor -- version {}", VERSION);
+        let mut welcome_message = format!("Bob editor -- version {}", VERSION);
         let width = self.terminal.size().width as usize;
         let len = welcome_message.len();
 
@@ -356,10 +356,11 @@ impl Editor {
         );
 
         let line_indicator = format!(
-            "{} | {}/{}",
+            "{} | {}/{}({}%)",
             self.document.file_type(),
             self.cursor_position.y.saturating_add(1),
-            self.document.len()
+            self.document.len(),
+            ((self.cursor_position.y + 1) as f32 / self.document.len() as f32 * 100.).floor(),
         );
 
         let len = status.len() + line_indicator.len();
