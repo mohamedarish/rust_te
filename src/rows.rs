@@ -44,11 +44,8 @@ impl Row {
                     .unwrap_or(&highlighting::Type::None);
                 if highlighting_type != current_highlighting {
                     current_highlighting = highlighting_type;
-                    let start_highlight = format!(
-                        "{}
-",
-                        termion::color::Fg(highlighting_type.to_color())
-                    );
+                    let start_highlight =
+                        format!("{}", termion::color::Fg(highlighting_type.to_color()));
                     result.push_str(&start_highlight[..]);
                 }
 
@@ -60,11 +57,7 @@ impl Row {
             }
         }
 
-        let end_highlight = format!(
-            "{}
-",
-            termion::color::Fg(color::Reset)
-        );
+        let end_highlight = format!("{}", termion::color::Fg(color::Reset));
         result.push_str(&end_highlight[..]);
         result
     }
@@ -119,12 +112,7 @@ impl Row {
     }
 
     pub fn append(&mut self, new: &Self) {
-        self.string = format!(
-            "{}
-{}
-",
-            self.string, new.string
-        );
+        self.string = format!("{}{}", self.string, new.string);
         self.len += new.len;
     }
 

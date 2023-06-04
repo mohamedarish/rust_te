@@ -60,11 +60,7 @@ impl Default for Editor {
             if let Ok(doc) = doc {
                 doc
             } else {
-                initial_status = format!(
-                    "ERR: Could not open file: {}
-",
-                    file_name
-                );
+                initial_status = format!("ERR: Could not open file: {}", file_name);
                 Document::default()
             }
         } else {
@@ -196,8 +192,7 @@ impl Editor {
             Key::Ctrl('q') => {
                 if self.quit_times > 0 && self.document.is_dirty() {
                     self.status_message = StatusMessage::from(format!(
-                        "WARNING! File has unsaved changes. Press Ctrl-Q {}
- more times to quit.",
+                        "WARNING! File has unsaved changes. Press Ctrl-Q {} more times to quit.",
                         self.quit_times
                     ));
                     self.quit_times -= 1;
@@ -333,28 +328,15 @@ impl Editor {
     }
 
     fn draw_welcome_message(&self) {
-        let mut welcome_message = format!(
-            "Bob editor -- version {}
-",
-            VERSION
-        );
+        let mut welcome_message = format!("Bob editor -- version {}", VERSION);
         let width = self.terminal.size().width as usize;
         let len = welcome_message.len();
 
         let padding = width.saturating_sub(len) / 2;
         let spaces = " ".repeat(padding.saturating_sub(1));
-        welcome_message = format!(
-            "~{}
-{}
-",
-            spaces, welcome_message
-        );
+        welcome_message = format!("~{}{}", spaces, welcome_message);
         welcome_message.truncate(width);
-        println!(
-            "{}
-\r",
-            welcome_message
-        );
+        println!("{}\r", welcome_message);
     }
 
     pub fn draw_row(&self, row: &Row) {
@@ -362,11 +344,7 @@ impl Editor {
         let start = self.offset.x;
         let end = self.offset.x.saturating_add(width);
         let row = row.render(start, end);
-        println!(
-            "{}
-\r",
-            row
-        )
+        println!("{}\r", row)
     }
 
     fn draw_rows(&self) {
@@ -402,21 +380,14 @@ impl Editor {
         }
 
         status = format!(
-            "{}
- - {}
- lines{}
-",
+            "{} - {} lines{}",
             file_name,
             self.document.len(),
             modified_indicator
         );
 
         let line_indicator = format!(
-            "{}
- | {}
-/{}
-({}
-%)",
+            "{} | {}/{} ({}%)",
             self.document.file_type(),
             self.cursor_position.y.saturating_add(1),
             self.document.len(),
@@ -425,20 +396,11 @@ impl Editor {
 
         let len = status.len() + line_indicator.len();
         status.push_str(&" ".repeat(width.saturating_sub(len)));
-        status = format!(
-            "{}
-{}
-",
-            status, line_indicator
-        );
+        status = format!("{}{}", status, line_indicator);
         status.truncate(width);
         Terminal::set_bg_color(STATUS_BG_COLOR);
         Terminal::set_fg_color(STATUS_FG_COLOR);
-        println!(
-            "{}
-\r",
-            status
-        );
+        println!("{}\r", status);
         Terminal::reset_fg_color();
         Terminal::reset_bg_color();
     }
@@ -459,12 +421,7 @@ impl Editor {
     {
         let mut result = String::new();
         loop {
-            self.status_message = StatusMessage::from(format!(
-                "{}
-{}
-",
-                prompt, result
-            ));
+            self.status_message = StatusMessage::from(format!("{}{}", prompt, result));
             self.refresh_screen()?;
             let key = Terminal::read_key()?;
             match key {
