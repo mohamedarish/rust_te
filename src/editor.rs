@@ -91,6 +91,10 @@ impl Editor {
                 break;
             }
 
+            if self.terminal.handle_resize() {
+                continue;
+            }
+
             if let Err(error) = self.process_keypress() {
                 die(error);
             }

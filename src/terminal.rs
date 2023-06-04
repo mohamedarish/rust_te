@@ -39,6 +39,21 @@ impl Terminal {
         print!("{}", termion::clear::All);
     }
 
+    pub fn handle_resize(&mut self) -> bool {
+        let size = termion::terminal_size().expect("Cannot read the terminal size");
+
+        if size.0 != self.size().width || size.1 != self.size().height + 2 {
+            self.size = Size {
+                width: size.0,
+                height: size.1 - 2,
+            };
+
+            return true;
+        }
+
+        false
+    }
+
     pub fn cursor_position(position: &Position) {
         let Position { mut x, mut y } = position;
         x = x.saturating_add(1);
