@@ -9,6 +9,7 @@ pub struct Size {
     pub width: u16,
     pub height: u16,
 }
+
 pub struct Terminal {
     size: Size,
     _stdout: RawTerminal<std::io::Stdout>,
@@ -58,24 +59,31 @@ impl Terminal {
             }
         }
     }
+
     pub fn cursor_hide() {
         print!("{}", termion::cursor::Hide);
     }
+
     pub fn cursor_show() {
         print!("{}", termion::cursor::Show);
     }
+
     pub fn clear_current_line() {
         print!("{}", termion::clear::CurrentLine);
     }
+
     pub fn set_bg_color(color: color::Rgb) {
         print!("{}", color::Bg(color));
     }
+
     pub fn reset_bg_color() {
         print!("{}", color::Bg(color::Reset));
     }
+
     pub fn set_fg_color(color: color::Rgb) {
         print!("{}", color::Fg(color));
     }
+
     pub fn reset_fg_color() {
         print!("{}", color::Fg(color::Reset));
     }

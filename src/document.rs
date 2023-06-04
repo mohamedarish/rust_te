@@ -21,6 +21,7 @@ impl Document {
         for value in contents.lines() {
             rows.push(Row::from(value));
         }
+
         Ok(Self {
             rows,
             file_name: Some(filename.to_string()),
@@ -28,22 +29,28 @@ impl Document {
             file_type,
         })
     }
+
     pub fn file_type(&self) -> String {
         self.file_type.name()
     }
+
     pub fn row(&self, index: usize) -> Option<&Row> {
         self.rows.get(index)
     }
+
     pub fn is_empty(&self) -> bool {
         self.rows.is_empty()
     }
+
     pub fn len(&self) -> usize {
         self.rows.len()
     }
+
     fn insert_newline(&mut self, at: &Position) {
         if at.y > self.rows.len() {
             return;
         }
+
         if at.y == self.rows.len() {
             self.rows.push(Row::default());
             return;
@@ -54,10 +61,12 @@ impl Document {
 
         self.rows.insert(at.y + 1, new_row);
     }
+
     pub fn insert(&mut self, at: &Position, c: char) {
         if at.y > self.rows.len() {
             return;
         }
+
         self.dirty = true;
         if c == '\n' {
             self.insert_newline(at);
@@ -69,6 +78,7 @@ impl Document {
             let row = &mut self.rows[at.y];
             row.insert(at.x, c);
         }
+
         self.unhighlight_rows(at.y);
     }
 
@@ -84,6 +94,7 @@ impl Document {
         if at.y >= len {
             return;
         }
+
         self.dirty = true;
         if at.x == self.rows[at.y].len() && at.y + 1 < len {
             let next_row = self.rows.remove(at.y + 1);
@@ -93,8 +104,10 @@ impl Document {
             let row = &mut self.rows[at.y];
             row.delete(at.x);
         }
+
         self.unhighlight_rows(at.y);
     }
+
     pub fn save(&mut self) -> Result<(), Error> {
         if let Some(file_name) = &self.file_name {
             let mut file = fs::File::create(file_name)?;
@@ -103,10 +116,13 @@ impl Document {
                 file.write_all(row.as_bytes())?;
                 file.write_all(b"\n")?;
             }
+
             self.dirty = false;
         }
+
         Ok(())
     }
+
     pub fn is_dirty(&self) -> bool {
         self.dirty
     }
@@ -115,6 +131,7 @@ impl Document {
         if at.y >= self.rows.len() {
             return None;
         }
+
         let mut position = Position { x: at.x, y: at.y };
 
         let start = if direction == SearchDirection::Forward {
@@ -133,6 +150,7 @@ impl Document {
                     position.x = x;
                     return Some(position);
                 }
+
                 if direction == SearchDirection::Forward {
                     position.y = position.y.saturating_add(1);
                     position.x = 0;
@@ -144,8 +162,10 @@ impl Document {
                 return None;
             }
         }
+
         None
     }
+
     pub fn highlight(&mut self, word: &Option<String>, until: Option<usize>) {
         let mut start_with_comment = false;
         let until = if let Some(until) = until {

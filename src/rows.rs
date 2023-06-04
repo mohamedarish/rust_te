@@ -44,10 +44,14 @@ impl Row {
                     .unwrap_or(&highlighting::Type::None);
                 if highlighting_type != current_highlighting {
                     current_highlighting = highlighting_type;
-                    let start_highlight =
-                        format!("{}", termion::color::Fg(highlighting_type.to_color()));
+                    let start_highlight = format!(
+                        "{}
+",
+                        termion::color::Fg(highlighting_type.to_color())
+                    );
                     result.push_str(&start_highlight[..]);
                 }
+
                 if c == '\t' {
                     result.push(' ');
                 } else {
@@ -55,22 +59,31 @@ impl Row {
                 }
             }
         }
-        let end_highlight = format!("{}", termion::color::Fg(color::Reset));
+
+        let end_highlight = format!(
+            "{}
+",
+            termion::color::Fg(color::Reset)
+        );
         result.push_str(&end_highlight[..]);
         result
     }
+
     pub fn len(&self) -> usize {
         self.len
     }
+
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
+
     pub fn insert(&mut self, at: usize, c: char) {
         if at >= self.len() {
             self.string.push(c);
             self.len += 1;
             return;
         }
+
         let mut result: String = String::new();
         let mut length = 0;
         for (index, grapheme) in self.string[..].graphemes(true).enumerate() {
@@ -79,15 +92,19 @@ impl Row {
                 length += 1;
                 result.push(c);
             }
+
             result.push_str(grapheme);
         }
+
         self.len = length;
         self.string = result;
     }
+
     pub fn delete(&mut self, at: usize) {
         if at >= self.len() {
             return;
         }
+
         let mut result: String = String::new();
         let mut length = 0;
         for (index, grapheme) in self.string[..].graphemes(true).enumerate() {
@@ -96,13 +113,21 @@ impl Row {
                 result.push_str(grapheme);
             }
         }
+
         self.len = length;
         self.string = result;
     }
+
     pub fn append(&mut self, new: &Self) {
-        self.string = format!("{}{}", self.string, new.string);
+        self.string = format!(
+            "{}
+{}
+",
+            self.string, new.string
+        );
         self.len += new.len;
     }
+
     pub fn split(&mut self, at: usize) -> Self {
         let mut row: String = String::new();
         let mut length = 0;
@@ -128,13 +153,16 @@ impl Row {
             highlighting: Vec::new(),
         }
     }
+
     pub fn as_bytes(&self) -> &[u8] {
         self.string.as_bytes()
     }
+
     pub fn find(&self, query: &str, at: usize, direction: SearchDirection) -> Option<usize> {
         if at > self.len || query.is_empty() {
             return None;
         }
+
         let start = if direction == SearchDirection::Forward {
             at
         } else {
@@ -165,6 +193,7 @@ impl Row {
                 }
             }
         }
+
         None
     }
 
@@ -173,6 +202,7 @@ impl Row {
             if word.is_empty() {
                 return;
             }
+
             let mut index = 0;
             while let Some(search_match) = self.find(word, index, SearchDirection::Forward) {
                 if let Some(next_index) = search_match.checked_add(word[..].graphemes(true).count())
@@ -180,6 +210,7 @@ impl Row {
                     for i in search_match..next_index {
                         self.highlighting[i] = highlighting::Type::Match;
                     }
+
                     index = next_index;
                 } else {
                     break;
@@ -198,6 +229,7 @@ impl Row {
         if substring.is_empty() {
             return false;
         }
+
         for (substring_index, c) in substring.chars().enumerate() {
             if let Some(next_char) = chars.get(index.saturating_add(substring_index)) {
                 if *next_char != c {
@@ -207,12 +239,15 @@ impl Row {
                 return false;
             }
         }
+
         for _ in 0..substring.len() {
             self.highlighting.push(hl_type);
             *index += 1;
         }
+
         true
     }
+
     fn highlight_keywords(
         &mut self,
         index: &mut usize,
@@ -226,6 +261,7 @@ impl Row {
                 return false;
             }
         }
+
         for word in keywords {
             if *index < chars.len().saturating_sub(word.len()) {
                 let next_char = chars[*index + word.len()];
@@ -238,6 +274,7 @@ impl Row {
                 return true;
             }
         }
+
         false
     }
 
@@ -254,6 +291,7 @@ impl Row {
             highlighting::Type::PrimaryKeywords,
         )
     }
+
     fn highlight_secondary_keywords(
         &mut self,
         index: &mut usize,
@@ -288,11 +326,13 @@ impl Row {
                             self.highlighting.push(highlighting::Type::Character);
                             *index += 1;
                         }
+
                         return true;
                     }
                 }
             }
         }
+
         false
     }
 
@@ -310,10 +350,12 @@ impl Row {
                         self.highlighting.push(highlighting::Type::Comment);
                         *index += 1;
                     }
+
                     return true;
                 }
             };
         }
+
         false
     }
 
@@ -337,10 +379,12 @@ impl Row {
                         self.highlighting.push(highlighting::Type::MultilineComment);
                         *index += 1;
                     }
+
                     return true;
                 }
             };
         }
+
         false
     }
 
@@ -363,12 +407,15 @@ impl Row {
                     break;
                 }
             }
+
             self.highlighting.push(highlighting::Type::String);
             *index += 1;
             return true;
         }
+
         false
     }
+
     fn highlight_number(
         &mut self,
         index: &mut usize,
@@ -383,6 +430,7 @@ impl Row {
                     return false;
                 }
             }
+
             loop {
                 self.highlighting.push(highlighting::Type::Number);
                 *index += 1;
@@ -394,8 +442,10 @@ impl Row {
                     break;
                 }
             }
+
             return true;
         }
+
         false
     }
 
@@ -415,8 +465,10 @@ impl Row {
                     return true;
                 }
             }
+
             return false;
         }
+
         self.highlighting = Vec::new();
         let mut index = 0;
         let mut in_ml_comment = start_with_comment;
@@ -429,13 +481,16 @@ impl Row {
             for _ in 0..closing_index {
                 self.highlighting.push(highlighting::Type::MultilineComment);
             }
+
             index = closing_index;
         }
+
         while let Some(c) = chars.get(index) {
             if self.highlight_multiline_comment(&mut index, opts, *c, &chars) {
                 in_ml_comment = true;
                 continue;
             }
+
             in_ml_comment = false;
             if self.highlight_char(&mut index, opts, *c, &chars)
                 || self.highlight_comment(&mut index, opts, *c, &chars)
@@ -446,13 +501,16 @@ impl Row {
             {
                 continue;
             }
+
             self.highlighting.push(highlighting::Type::None);
             index += 1;
         }
+
         self.highlight_match(word);
         if in_ml_comment && &self.string[self.string.len().saturating_sub(2)..] != "*/" {
             return true;
         }
+
         self.is_highlighted = true;
         false
     }
