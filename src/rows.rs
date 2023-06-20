@@ -31,6 +31,13 @@ impl Row {
         let mut result = String::new();
         let mut current_highlighting = &highlighting::Type::None;
 
+        if self.string.starts_with("//") {
+            result.push_str(&format!("{}", color::Fg(color::Rgb(82, 107, 112))));
+            result.push_str(&self.string);
+            result.push_str(&format!("{}", color::Fg(color::Reset)));
+            return result;
+        }
+
         for (index, grapheme) in self.string[..]
             .graphemes(true)
             .enumerate()
