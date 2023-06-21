@@ -8,7 +8,7 @@ use termion::color;
 use termion::event::Key;
 
 const STATUS_FG_COLOR: color::Rgb = color::Rgb(63, 63, 63);
-const STATUS_BG_COLOR: color::Rgb = color::Rgb(116, 219,187);
+const STATUS_BG_COLOR: color::Rgb = color::Rgb(116, 219, 187);
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const QUIT_TIMES: u8 = 3;
 
