@@ -156,6 +156,7 @@ impl FileType {
                         "short".to_string(),
                         "long".to_string(),
                         "char".to_string(),
+                        "void".to_string(),
                     ],
                 },
             };
